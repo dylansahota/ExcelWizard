@@ -64,7 +64,7 @@ class MainApplication():
         self.SpaceLabel12 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel12.grid(column = 1, row = 6)
 
-        self.DedupeButton = Button(frame, text = "Dedupe", height = 3, width = 10)#, command = self.MergeWindow)
+        self.DedupeButton = Button(frame, text = "Dedupe", height = 3, width = 10, command = self.dedupe_window)
         self.DedupeButton.grid(column = 2, row = 6)
 
         self.DedupeLabel = Label(frame, text = "Deduplicates a file based on values in a selected column", height = 3, width = 45, bg = "grey")
@@ -226,6 +226,9 @@ class MainApplication():
 
     def convert_window(self):
         self.window = ConvertWindow()
+
+    def dedupe_window(self):
+        self.window = DedupeWindow()
         
 # Class containing everything related to file cleaner
 class CleanWindow():
@@ -317,9 +320,9 @@ class CleanWindow():
 
         # Translates all files to CSV
         if self.fileformat == "CSV":
-            self.df.to_csv(self.file_name[:-4]+"_Cleaned.csv")
+            self.df.to_csv(self.file_name[:-4]+"_Cleaned.csv", index = False)
         elif self.fileformat == "XLSX":
-            self.df.to_csv(self.file_name[:-5]+"_Cleaned.csv")
+            self.df.to_csv(self.file_name[:-5]+"_Cleaned.csv", index = False)
 
         # Confirmation message after file has been cleaned
         messagebox.showinfo("Success!", "Your File has been Cleaned!")
@@ -385,7 +388,7 @@ class ConvertWindow():
 # Method to select file and add it as a variable to be called when processing
     def OpenFile(self):
         self.text.set("")
-        self.file_name = filedialog.askopenfilename(initialdir="/",title="Choose your file to be Cleaned")
+        self.file_name = filedialog.askopenfilename(initialdir="/",title="Choose your file to be Converted")
         self.text.set(self.file_name)
         return self.file_name
 
@@ -418,11 +421,11 @@ class ConvertWindow():
 
         # Translates all files to CSV
         if self.fileformat == "CSV":
-            self.df.to_csv(self.file_name[:-4]+".csv")
+            self.df.to_csv(self.file_name[:-4]+".csv", index = False)
         elif self.fileformat == "XLSX":
-            self.df.to_csv(self.file_name[:-5]+".csv")
+            self.df.to_csv(self.file_name[:-5]+".csv", index = False)
         elif self.fileformat == "XLS":
-            self.df.to_csv(self.file_name[:-4]+".csv")
+            self.df.to_csv(self.file_name[:-4]+".csv", index = False)
 
         # Confirmation message after file has been cleaned
         messagebox.showinfo("Success!", "Your File has been Converted!")
@@ -445,14 +448,136 @@ class ConvertWindow():
 
         # Translates all files to XLSX
         if self.fileformat == "CSV":
-            self.df.to_excel(self.file_name[:-4]+".xlsx")
+            self.df.to_excel(self.file_name[:-4]+".xlsx", index = False)
         elif self.fileformat == "XLSX":
-            self.df.to_excel(self.file_name[:-5]+".xlsx")
+            self.df.to_excel(self.file_name[:-5]+".xlsx", index = False)
         elif self.fileformat == "XLS":
-            self.df.to_excel(self.file_name[:-4]+".xlsx")
+            self.df.to_excel(self.file_name[:-4]+".xlsx", index = False)
 
         # Confirmation message after file has been cleaned
         messagebox.showinfo("Success!", "Your File has been Converted!")
+
+# Class containing everything related to file cleaner
+class DedupeWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - File Deduper")
+        self.text = StringVar()
+        self.text.set("")
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 5)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 2, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "w")
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 3)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 4, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
+
+        self.SpaceLabel5 = Label(self.top, text = "This will deduplicate a file based on the values in a selected column", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
+
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 4, row = 2)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select File", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Select Column", height = 1, command = self.SelectColumn)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear File", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 3, row = 4)
+
+        self.SpaceLabel1 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel1.grid(column = 4, row = 4)
+
+        # Row 5 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 5, columnspan = 5)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text.set("")
+        self.file_name = filedialog.askopenfilename(initialdir="/documents/Excel Wizard Testing",title="Choose your file to be Deduplicated")
+        self.text.set(self.file_name)
+        return self.file_name
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+
+    def SelectColumn(self):
+        # Throws an error if there is no file selected in previous window
+        if self.file_name == "":
+            messagebox.showerror("Error!","You have not selected a File! Please try again")
+            return False
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        elif self.file_name[-3:] == "csv" or self.file_name[-3:] == "txt":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx" or self.file_name[-4:] == "xlsm" or self.file_name[-4:] == "xlsb":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        elif self.file_name[-3:] == "xls":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLS"
+        else:
+            messagebox.showerror("Error!","This tool only supports TXT, CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Creates a list based on the columns headers from the selected file
+        column_list = list(self.df)
+
+        # Creates a sub window to allow us to select column to dedupe file on
+        self.subtop = Toplevel(bg="grey")
+        self.subtop.geometry("350x275")
+        self.subtop.title("Excel Wizard - Column Selector")
+
+        # Creates listbox within sub-window which will contain column headers from selected file
+        self.ListBox = Listbox(self.subtop, width = 35, height = 9)
+
+        # loops through all items in column header list and adds them to listbox
+        for item in column_list:
+            self.ListBox.insert(END,item)
+
+        # Adds listbox to sub-window
+        self.ListBox.grid(pady = 15, padx = 17)
+
+        # Inserts instruction comment
+        self.CommentLabel = Label(self.subtop, text = "Please select the column you want to dedupe on", bg = "grey", pady = 10)
+        self.CommentLabel.grid()
+
+        # Adds dedupe button to sub-screen
+        self.DedupeButton = Button(self.subtop, text = "Dedupe File", height = 1, command = self.DedupeProcessor)
+        self.DedupeButton.grid()
+
+    def DedupeProcessor(self):
+        self.df.sort_values(self.ANCHOR, inplace = True)
+        self.df.drop_duplicates(subset = self.ANCHOR, keep = 'first', inplace = True)
+
+        # Translates all files to CSV
+        if self.fileformat == "CSV":
+            self.df.to_csv(self.file_name[:-4]+"_Deduped.csv", index = False)
+        elif self.fileformat == "XLSX":
+            self.df.to_excel(self.file_name[:-5]+"_Deduped.xlsx", index = False)
+        elif self.fileformat == "XLS":
+            self.df.to_excel(self.file_name[:-4]+"_Deduped.xlsx", index = False)
 
 def main():
     root = Tk()
