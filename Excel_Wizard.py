@@ -568,8 +568,9 @@ class DedupeWindow():
         self.DedupeButton.grid()
 
     def DedupeProcessor(self):
-        self.df.sort_values(self.ANCHOR, inplace = True)
-        self.df.drop_duplicates(subset = self.ANCHOR, keep = 'first', inplace = True)
+        field = self.ListBox.get(ANCHOR)
+        self.df.sort_values(field, inplace = True)
+        self.df.drop_duplicates(subset = field, keep = 'first', inplace = True)
 
         # Translates all files to CSV
         if self.fileformat == "CSV":
@@ -578,6 +579,9 @@ class DedupeWindow():
             self.df.to_excel(self.file_name[:-5]+"_Deduped.xlsx", index = False)
         elif self.fileformat == "XLS":
             self.df.to_excel(self.file_name[:-4]+"_Deduped.xlsx", index = False)
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your File has been Deduped!")
 
 def main():
     root = Tk()
