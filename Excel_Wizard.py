@@ -108,7 +108,7 @@ class MainApplication():
         self.SpaceLabel20 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel20.grid(column = 1, row = 10)
 
-        self.MergeButton = Button(frame, text = "Merge", height = 3, width = 10)#, command = self.MergeWindow)
+        self.MergeButton = Button(frame, text = "Merge", height = 3, width = 10, command = self.merge_window)
         self.MergeButton.grid(column = 2, row = 10)
 
         self.MergeLabel = Label(frame, text = "Merges multiple files together", height = 3, width = 45, bg = "grey")
@@ -235,7 +235,10 @@ class MainApplication():
         self.window = DedupeWindow()
 
     def edit_window(self):
-        self.window= EditWindow()
+        self.window = EditWindow()
+
+    def merge_window(self):
+        self.window = MergeWindow()
         
 # Class containing everything related to file cleaner
 class CleanWindow():
@@ -636,7 +639,7 @@ class EditWindow():
         self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
         self.SpaceLabel7.grid(column = 3, row = 4)
 
-        self.ProcessButton = Button(self.top, text = "Remove Columns", height = 1)#, command = self.ProcessFileXLSX)
+        self.ProcessButton = Button(self.top, text = "Remove Columns", height = 1, command = self.RemoveColumn)
         self.ProcessButton.grid(column = 4, row = 4)
 
         self.SplitButton = Button(self.top, text = "Clear File", height = 1, command = self.ClearFile)
@@ -645,7 +648,7 @@ class EditWindow():
         self.SpaceLabel8 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
         self.SpaceLabel8.grid(column = 6, row = 4)
 
-        # Row 5 -  Blank Row
+        # Row 5 - Blank Row
         self.SpaceLabel9 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
         self.SpaceLabel9.grid(column = 0, row = 5, columnspan = 7)
 
@@ -736,14 +739,178 @@ class EditWindow():
 
         # Translates all files to the source file format
         if self.fileformat == "CSV":
-            self.df.to_csv(self.file_name, index = False)
+            self.df.to_csv(self.file_name[:-4]+"_Edited.csv", index = False)
         elif self.fileformat == "XLSX":
-            self.df.to_excel(self.file_name, index = False)
+            self.df.to_excel(self.file_name[:-5]+"_Edited.xlsx", index = False)
         elif self.fileformat == "XLS":
-            self.df.to_excel(self.file_name, index = False)
+            self.df.to_excel(self.file_name[:-4]+"_Edited.xlsx", index = False)
 
         # Confirmation message after file has been cleaned
         messagebox.showinfo("Success!", "Your Column has been Added!")
+
+    def RemoveColumn(self):
+        # Throws an error if there is no file selected in previous window
+        if self.file_name == "":
+            messagebox.showerror("Error!","You have not selected a File! Please try again")
+            return False
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        elif self.file_name[-3:] == "csv" or self.file_name[-3:] == "txt":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx" or self.file_name[-4:] == "xlsm" or self.file_name[-4:] == "xlsb":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        elif self.file_name[-3:] == "xls":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLS"
+        else:
+            messagebox.showerror("Error!","This tool only supports TXT, CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Creates a list based on the columns headers from the selected file
+        self.column_list = list(self.df)
+
+        # Creates a sub window to allow us to select column to dedupe file on
+        self.subtop = Toplevel(bg="grey")
+        self.subtop.geometry("350x250")
+        self.subtop.title("Excel Wizard - Column Selector")
+
+        # Creates listbox within sub-window which will contain column headers from selected file
+        self.ListBox = Listbox(self.subtop, width = 35, height = 9, selectmode = MULTIPLE)
+
+        # loops through all items in column header list and adds them to listbox
+        for item in self.column_list:
+            self.ListBox.insert(END,item)
+
+        # Inserts instruction comment
+        self.CommentLabel = Label(self.subtop, text = "Please select the columns you want to remove", bg = "grey", pady = 5)
+        self.CommentLabel.grid()
+
+        # Adds listbox to sub-window
+        self.ListBox.grid(padx = 17)
+
+        # Inserts instruction comment
+        self.CommentLabel = Label(self.subtop, text = "", bg = "grey")
+        self.CommentLabel.grid()
+
+        # Adds dedupe button to sub-screen
+        self.DedupeButton = Button(self.subtop, text = "Remove Column", height = 1, command = self.RemoveColumnProcessor)
+        self.DedupeButton.grid()
+    
+    def RemoveColumnProcessor(self):
+
+        self.column_indexes = list(self.ListBox.curselection())
+        self.df.drop(self.df.columns[self.column_indexes], axis = 1, inplace = True)
+
+        # Translates all files to the source file format
+        if self.fileformat == "CSV":
+            self.df.to_csv(self.file_name[:-4]+"_Edited.csv", index = False)
+        elif self.fileformat == "XLSX":
+            self.df.to_excel(self.file_name[:-5]+"_Edited.xlsx", index = False)
+        elif self.fileformat == "XLS":
+            self.df.to_excel(self.file_name[:-4]+"_Edited.xlsx", index = False)
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your Columns have been Removed!")
+
+class MergeWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - File Merger")
+        self.text = StringVar()
+        self.text.set("")
+        self.text_string = ""
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 5)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 50, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "nw", justify = LEFT)
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 3)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 4, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
+
+        self.SpaceLabel5 = Label(self.top, text = "This will merge all selected files together into one final merged file", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
+
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 4, row = 2)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select Files", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Merge Files", height = 1, command = self.ProcessFile)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear Files", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 3, row = 4)
+
+        self.SpaceLabel1 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel1.grid(column = 4, row = 4)
+
+        # Row 5 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 5, columnspan = 5)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text_string = filedialog.askopenfilenames(initialdir="/documents/Excel Wizard Testing",title="Choose your files to be Merged")
+        # Loops through list of all selected files, and adds to the string variable with a new line between each file, for display purposes in the label widget
+        for item in self.text_string:
+            self.file_name = self.file_name+(item+"\n")
+        self.text.set(self.file_name)
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+        self.text_placeholder = ""
+
+    # Method to clear out non-ASCII characters and all whitespaces from strings
+    def ProcessFile(self):
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        if self.file_name[-3:] == "csv":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx":
+            if len(pd.ExcelFile(self.file_name).sheet_names) > 1:
+                messagebox.showerror("Error!","This tool only supports Single Sheet Spreadsheets! Please Try Again")
+                return False
+            else:
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        else:
+            messagebox.showerror("Error!","This tool only supports CSV or XLSX files only! Please Try Again")
+
+        # Looks for all ascii characters, and ignores/removes if there are any errors and then translates back to the normal characters
+        self.df = self.df.applymap(lambda x: x.encode("ascii", errors="ignore").decode())
+        # Looks for all columns which contain objects as datatypes
+        self.df_obj = self.df.select_dtypes(['object'])
+        # Removes all whitespaces from columns which contain strings, based on above variable
+        self.df[self.df_obj.columns] = self.df_obj.apply(lambda x: x.str.strip())
+
+        # Translates all files to CSV
+        if self.fileformat == "CSV":
+            self.df.to_csv(self.file_name[:-4]+"_Cleaned.csv", index = False)
+        elif self.fileformat == "XLSX":
+            self.df.to_csv(self.file_name[:-5]+"_Cleaned.csv", index = False)
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your File has been Cleaned!")    
 
 def main():
     root = Tk()
