@@ -879,38 +879,58 @@ class MergeWindow():
         self.text.set("")
         self.file_name = ""
         self.text_placeholder = ""
+        self.text_string = ""
+        self.filedirectory = ""
 
     # Method to clear out non-ASCII characters and all whitespaces from strings
     def ProcessFile(self):
         # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
-        if self.file_name[-3:] == "csv":
-            self.df = pd.read_csv(self.file_name)
-            self.fileformat = "CSV"
-        elif self.file_name[-4:] == "xlsx":
-            if len(pd.ExcelFile(self.file_name).sheet_names) > 1:
-                messagebox.showerror("Error!","This tool only supports Single Sheet Spreadsheets! Please Try Again")
-                return False
-            else:
-                self.df = pd.read_excel(self.file_name)
-                self.fileformat = "XLSX"
+
+        self.sourcestring = ""
+        self.filedirectory = ""
+        self.firstfile = ""
+        self.df2 = pd.DataFrame()
+        self.csv = False
+
+        if len(self.text_string) < 2:
+            messagebox.showerror("Error!","You haven't selected enough spreadsheets! Please Try Again")
+            return False
         else:
-            messagebox.showerror("Error!","This tool only supports CSV or XLSX files only! Please Try Again")
+            for item in self.text_string:
+                if item[-3:] == "csv" or item[-3:] == "txt":
+                    self.csv = True
+                    self.df = pd.read_csv(item)
+                elif item[-4:] == "xlsx" or item[-4:] == "xlsm" or item[-4:] == "xlsb":
+                    if len(pd.ExcelFile(item).sheet_names) > 1:
+                        messagebox.showerror("Error!","This tool only supports Single Sheet Spreadsheets! Please Try Again")
+                        return False
+                    else:
+                        self.df = pd.read_excel(item)
+                elif item[-3:] == "xls":
+                    if len(pd.ExcelFile(item).sheet_names) > 1:
+                        messagebox.showerror("Error!","This tool only supports Single Sheet Spreadsheets! Please Try Again")
+                        return False
+                    else:
+                        self.df = pd.read_excel(item)
+                else:
+                    messagebox.showerror("Error!","This tool only supports CSV or XLSX files only! Please Try Again")
 
-        # Looks for all ascii characters, and ignores/removes if there are any errors and then translates back to the normal characters
-        self.df = self.df.applymap(lambda x: x.encode("ascii", errors="ignore").decode())
-        # Looks for all columns which contain objects as datatypes
-        self.df_obj = self.df.select_dtypes(['object'])
-        # Removes all whitespaces from columns which contain strings, based on above variable
-        self.df[self.df_obj.columns] = self.df_obj.apply(lambda x: x.str.strip())
+                self.sourcestring = item.split("/")
+                self.df["source"] = self.sourcestring[-1]
+                self.df2 = self.df2.append(self.df)
+            
+            self.df2.fillna('', inplace=True)
+            self.firstfile = str(self.text_string[0])
+            self.sourcestring = self.text_string[0].split("/")
+            self.filedirectory = self.firstfile.replace(str(self.sourcestring[-1]),"")
 
-        # Translates all files to CSV
-        if self.fileformat == "CSV":
-            self.df.to_csv(self.file_name[:-4]+"_Cleaned.csv", index = False)
-        elif self.fileformat == "XLSX":
-            self.df.to_csv(self.file_name[:-5]+"_Cleaned.csv", index = False)
+            if self.csv == True:
+                self.df2.to_csv(self.filedirectory+"/Mergelist.csv", index = False)
+            else:
+                self.df2.to_excel(self.filedirectory+"/Mergelist.xlsx", index = False)
 
-        # Confirmation message after file has been cleaned
-        messagebox.showinfo("Success!", "Your File has been Cleaned!")    
+            # Confirmation message after file has been cleaned
+            messagebox.showinfo("Success!", "Your Files have been Merged!")    
 
 def main():
     root = Tk()
