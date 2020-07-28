@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 import pandas as pd
 # Requires openpyxl to be installed on machine
 # TO DO
@@ -128,7 +129,7 @@ class MainApplication():
         self.SpaceLabel24 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel24.grid(column = 1, row = 12)
 
-        self.PreviewButton = Button(frame, text = "Preview", height = 3, width = 10)#, command = self.MergeWindow)
+        self.PreviewButton = Button(frame, text = "Preview", height = 3, width = 10, command = self.preview_window)
         self.PreviewButton.grid(column = 2, row = 12)
 
         self.PreviewLabel = Label(frame, text = "Preview the contents of a file", height = 3, width = 45, bg = "grey")
@@ -239,6 +240,9 @@ class MainApplication():
 
     def merge_window(self):
         self.window = MergeWindow()
+
+    def preview_window(self):
+        self.window = PreviewWindow()
         
 # Class containing everything related to file cleaner
 class CleanWindow():
@@ -930,7 +934,119 @@ class MergeWindow():
                 self.df2.to_excel(self.filedirectory+"/Mergelist.xlsx", index = False)
 
             # Confirmation message after file has been cleaned
-            messagebox.showinfo("Success!", "Your Files have been Merged!")    
+            messagebox.showinfo("Success!", "Your Files have been Merged!")
+
+# Class containing everything related to file cleaner
+class PreviewWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - File Preview")
+        self.text = StringVar()
+        self.text.set("")
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 5)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 2, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "w")
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 3)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 4, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
+
+        self.SpaceLabel5 = Label(self.top, text = "This will allow you to preview the contents of the first 100 rows of a file", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
+
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 4, row = 2)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select File", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Preview File", height = 1, command = self.PreviewFile)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear File", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 3, row = 4)
+
+        self.SpaceLabel1 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel1.grid(column = 4, row = 4)
+
+        # Row 5 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 5, columnspan = 5)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text.set("")
+        self.file_name = filedialog.askopenfilename(initialdir="/",title="Choose your file to be Cleaned")
+        self.text.set(self.file_name)
+        return self.file_name
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+
+    # Method to clear out non-ASCII characters and all whitespaces from strings
+    def PreviewFile(self):
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        if self.file_name[-3:] == "csv":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx":
+            if len(pd.ExcelFile(self.file_name).sheet_names) > 1:
+                messagebox.showerror("Error!","This tool only supports Single Sheet Spreadsheets! Please Try Again")
+                return False
+            else:
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        else:
+            messagebox.showerror("Error!","This tool only supports CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Checks length of dataframe, limits to 100 if the size is longer than 100
+        if len(self.df) < 100:
+            self.df = self.df
+        else:
+            self.df = self.df.head(100)
+
+        # Reverses the order of the dataframe so it is in the same order as the original spreadsheet
+        self.df = self.df.iloc[::-1]
+
+        # Creates a list of the columns from the selected dataframe
+        self.columns = list(self.df)
+
+        # Creates a sub window which will contain preview of file
+        self.subtop = Toplevel()
+        self.subtop.title(self.file_name)
+
+        # Creates Treeview
+        self.treeview = ttk.Treeview(self.subtop)
+        self.treeview.grid()
+
+        # Inserts columns and data into treeview from dataframe
+        self.treeview["columns"] = self.columns
+        for item in self.columns:
+            self.treeview.column(item, anchor = "w")
+            self.treeview.heading(item, text = item, anchor = "w")
+        
+        for index, row in self.df.iterrows():
+            self.treeview.insert("",0,text=index,values=list(row))
+
 
 def main():
     root = Tk()
