@@ -8,6 +8,14 @@ import pandas as pd
 # Re name all variables
 # Finish functionality
 # Re order label creation and grid commands
+# Create open files and clear files to be one function rather than method
+# Standardise file opening for the multiple file types
+# Create Read Me
+# Turn into Executable
+# Fix Treeview first row and size of rows
+# Add Horizontal Scrollbar to Treeview
+# Fix label creation for blank row to one line rather than three lines
+# Create function for turning file into dataframe
 
 class MainApplication():
     def __init__(self, master):
@@ -149,10 +157,10 @@ class MainApplication():
         self.SpaceLabel28 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel28.grid(column = 1, row = 14)
 
-        self.RandomiserButton = Button(frame, text = "Randomiser", height = 3, width = 10)#, command = self.MergeWindow)
+        self.RandomiserButton = Button(frame, text = "Randomiser", height = 3, width = 10, command = self.randomise_window)
         self.RandomiserButton.grid(column = 2, row = 14)
 
-        self.RandomiserLabel = Label(frame, text = "Randomise the contents of a file based on a selected column", height = 3, width = 45, bg = "grey")
+        self.RandomiserLabel = Label(frame, text = "Randomise the order of a spreadsheet", height = 3, width = 45, bg = "grey")
         self.RandomiserLabel.grid(column = 3, row = 14)
 
         # Row 15 - Blank Row
@@ -169,7 +177,7 @@ class MainApplication():
         self.SpaceLabel33 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel33.grid(column = 1, row = 16)
 
-        self.SortButton = Button(frame, text = "Sort", height = 3, width = 10)#, command = self.MergeWindow)
+        self.SortButton = Button(frame, text = "Sort", height = 3, width = 10, command = self.sort_window)
         self.SortButton.grid(column = 2, row = 16)
 
         self.SortLabel = Label(frame, text = "Sorts a file based on values in a selected column", height = 3, width = 45, bg = "grey")
@@ -189,7 +197,7 @@ class MainApplication():
         self.SpaceLabel35 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel35.grid(column = 1, row = 18)
 
-        self.SplitButton = Button(frame, text = "Split", height = 3, width = 10)#, command = self.MergeWindow)
+        self.SplitButton = Button(frame, text = "Split", height = 3, width = 10)#, command = self.sort_window)
         self.SplitButton.grid(column = 2, row = 18)
 
         self.SplitLabel = Label(frame, text = "Splits a file based on values in a selected column", height = 3, width = 45, bg = "grey")
@@ -243,6 +251,12 @@ class MainApplication():
 
     def preview_window(self):
         self.window = PreviewWindow()
+
+    def randomise_window(self):
+        self.window = RandomiseWindow()
+
+    def sort_window(self):
+        self.window = SortWindow()
         
 # Class containing everything related to file cleaner
 class CleanWindow():
@@ -1047,6 +1061,228 @@ class PreviewWindow():
         for index, row in self.df.iterrows():
             self.treeview.insert("",0,text=index,values=list(row))
 
+# Class containing everything related to file cleaner
+class RandomiseWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - File Randomiser")
+        self.text = StringVar()
+        self.text.set("")
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 5)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 2, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "w")
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 3)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 4, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
+
+        self.SpaceLabel5 = Label(self.top, text = "This will randomise the order of a file", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
+
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 4, row = 2)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select File", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Randomise File", height = 1, command = self.RandomiseFile)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear File", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 3, row = 4)
+
+        self.SpaceLabel1 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel1.grid(column = 4, row = 4)
+
+        # Row 5 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 5, columnspan = 5)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text.set("")
+        self.file_name = filedialog.askopenfilename(initialdir="/",title="Choose your file to be Cleaned")
+        self.text.set(self.file_name)
+        return self.file_name
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+
+    # Method to clear out non-ASCII characters and all whitespaces from strings
+    def RandomiseFile(self):
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        if self.file_name[-3:] == "csv":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx":
+            if len(pd.ExcelFile(self.file_name).sheet_names) > 1:
+                messagebox.showerror("Error!","This tool only supports Single Sheet Spreadsheets! Please Try Again")
+                return False
+            else:
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        else:
+            messagebox.showerror("Error!","This tool only supports CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Randomises dataframe order
+        self.df = self.df.sample(frac=1)
+
+        # Translates all files to the source file format
+        if self.fileformat == "CSV":
+            self.df.to_csv(self.file_name, index = False)
+        elif self.fileformat == "XLSX":
+            self.df.to_excel(self.file_name, index = False)
+        elif self.fileformat == "XLS":
+            self.df.to_excel(self.file_name[:-4], index = False)
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your File order has been randomised!")
+
+# Class containing everything related to file deduper
+class SortWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - File Sorter")
+        self.text = StringVar()
+        self.text.set("")
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 5)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 2, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "w")
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 3)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 4, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
+
+        self.SpaceLabel5 = Label(self.top, text = "This will sort a file based on the values in a column", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
+
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 4, row = 2)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select File", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Select Column", height = 1, command = self.SelectColumn)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear File", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 3, row = 4)
+
+        self.SpaceLabel1 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel1.grid(column = 4, row = 4)
+
+        # Row 5 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 5, columnspan = 5)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text.set("")
+        self.file_name = filedialog.askopenfilename(initialdir="/documents/Excel Wizard Testing",title="Choose your file to be Deduplicated")
+        self.text.set(self.file_name)
+        return self.file_name
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+
+    def SelectColumn(self):
+        # Throws an error if there is no file selected in previous window
+        if self.file_name == "":
+            messagebox.showerror("Error!","You have not selected a File! Please try again")
+            return False
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        elif self.file_name[-3:] == "csv" or self.file_name[-3:] == "txt":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx" or self.file_name[-4:] == "xlsm" or self.file_name[-4:] == "xlsb":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        elif self.file_name[-3:] == "xls":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLS"
+        else:
+            messagebox.showerror("Error!","This tool only supports TXT, CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Creates a list based on the columns headers from the selected file
+        column_list = list(self.df)
+
+        # Creates a sub window to allow us to select column to dedupe file on
+        self.subtop = Toplevel(bg="grey")
+        self.subtop.geometry("350x275")
+        self.subtop.title("Excel Wizard - Column Selector")
+
+        # Creates listbox within sub-window which will contain column headers from selected file
+        self.ListBox = Listbox(self.subtop, width = 35, height = 9)
+
+        # loops through all items in column header list and adds them to listbox
+        for item in column_list:
+            self.ListBox.insert(END,item)
+
+        # Adds listbox to sub-window
+        self.ListBox.grid(pady = 15, padx = 17)
+
+        # Inserts instruction comment
+        self.CommentLabel = Label(self.subtop, text = "Please select the column you want to sort on", bg = "grey", pady = 10)
+        self.CommentLabel.grid()
+
+        # Adds dedupe button to sub-screen
+        self.DedupeButton = Button(self.subtop, text = "Sort File", height = 1, command = self.FileSorter)
+        self.DedupeButton.grid()
+
+    def FileSorter(self):
+        # Gets the selection from the list box, and enters it as a variable called field which is used in the dedupe action
+        field = self.ListBox.get(ANCHOR)
+        # Sorts dataframe by the selected field
+        self.df.sort_values(by = field, inplace=True)
+
+        # Translates all files to the source file format
+        if self.fileformat == "CSV":
+            self.df.to_csv(self.file_name, index = False)
+        elif self.fileformat == "XLSX":
+            self.df.to_excel(self.file_name, index = False)
+        elif self.fileformat == "XLS":
+            self.df.to_excel(self.file_name, index = False)
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your File has been Sorted!")
 
 def main():
     root = Tk()
