@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
+from numpy import array_split
 import pandas as pd
 # Requires openpyxl to be installed on machine
 # TO DO
@@ -225,14 +226,34 @@ class MainApplication():
         self.SeparateLabel.grid(column = 3, row = 20)
 
         # Row 21 - Blank Row
-        self.SpaceLabel36 = Label(frame, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel36 = Label(frame, text = "", height = 1, width = 2, bg = "grey")
         self.SpaceLabel36.grid(column = 1, row = 21)
 
-        self.SpaceLabel37 = Label(frame, text = "", height = 2, width = 10, bg = "grey")
+        self.SpaceLabel37 = Label(frame, text = "", height = 1, width = 10, bg = "grey")
         self.SpaceLabel37.grid(column = 2, row = 21)
 
-        self.SpaceLabel38 = Label(frame, text = "", height = 2, width = 45, bg = "grey")
+        self.SpaceLabel38 = Label(frame, text = "", height = 1, width = 45, bg = "grey")
         self.SpaceLabel38.grid(column = 3, row = 21)
+
+        # Row 22 - Chunk Button Row
+        self.SpaceLabel35 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
+        self.SpaceLabel35.grid(column = 1, row = 22)
+
+        self.SeparateButton = Button(frame, text = "Chunk", height = 3, width = 10, command = self.chunk_window)
+        self.SeparateButton.grid(column = 2, row = 22)
+
+        self.SeparateLabel = Label(frame, text = "Splits a spreadsheet into smaller chunked spreadsheets", height = 3, width = 45, bg = "grey")
+        self.SeparateLabel.grid(column = 3, row = 22)
+
+        # Row 21 - Blank Row
+        self.SpaceLabel36 = Label(frame, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel36.grid(column = 1, row = 23)
+
+        self.SpaceLabel37 = Label(frame, text = "", height = 2, width = 10, bg = "grey")
+        self.SpaceLabel37.grid(column = 2, row = 23)
+
+        self.SpaceLabel38 = Label(frame, text = "", height = 2, width = 45, bg = "grey")
+        self.SpaceLabel38.grid(column = 3, row = 23)
 
     # Method to call if button is picked Clean Window Class
     def clean_window(self):
@@ -261,6 +282,9 @@ class MainApplication():
 
     def split_window(self):
         self.window = SplitWindow()
+
+    def chunk_window(self):
+        self.window = ChunkWindow()
         
 # Class containing everything related to file cleaner
 class CleanWindow():
@@ -1315,7 +1339,7 @@ class SplitWindow():
         self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
         self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
 
-        self.SpaceLabel5 = Label(self.top, text = "This will a file into smaller files based on the contents of a column", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5 = Label(self.top, text = "This will split a file into smaller files based on the contents of a column", height = 2, width = 60, bg = "grey")
         self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
 
         self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
@@ -1421,6 +1445,237 @@ class SplitWindow():
         # Confirmation message after file has been cleaned
         messagebox.showinfo("Success!", "Your Files have been Split!")
 
+class ChunkWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - File Chunker")
+        self.text = StringVar()
+        self.text.set("")
+        self.text_string = ""
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 7)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 2, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "w")
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 5)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 6, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 7)
+
+
+        # Row 4 - Description Row
+        self.SpaceLabel5 = Label(self.top, text = "This will chunk a file either by the number of chunks or the number of rows per chunk", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 5)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select File", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Number of Chunks", height = 1, command = self.SelectChunks)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 3, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Number of Rows", height = 1, command = self.SelectRows)
+        self.ProcessButton.grid(column = 4, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear File", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 5, row = 4)
+
+        self.SpaceLabel8 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel8.grid(column = 6, row = 4)
+
+        # Row 5 - Blank Row
+        self.SpaceLabel9 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel9.grid(column = 0, row = 5, columnspan = 7)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text.set("")
+        self.file_name = filedialog.askopenfilename(initialdir="/documents/Excel Wizard Testing",title="Choose your file to be Deduplicated")
+        self.text.set(self.file_name)
+        return self.file_name
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+        self.text_placeholder = ""
+        self.text_string = ""
+        self.filedirectory = ""
+
+    def SelectChunks(self):
+        # Throws an error if there is no file selected in previous window
+        if self.file_name == "":
+            messagebox.showerror("Error!","You have not selected a File! Please try again")
+            return False
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        elif self.file_name[-3:] == "csv" or self.file_name[-3:] == "txt":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx" or self.file_name[-4:] == "xlsm" or self.file_name[-4:] == "xlsb":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        elif self.file_name[-3:] == "xls":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLS"
+        else:
+            messagebox.showerror("Error!","This tool only supports TXT, CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Creates a sub window to allow us to select column to dedupe file on
+        self.subtop = Toplevel(bg="grey")
+        self.subtop.geometry("395x130")
+        self.subtop.title("Excel Wizard - Chunk Selector")
+
+        self.BlankLabel = Label(self.subtop, text = "", bg = "grey", height = 1)
+        self.BlankLabel.grid()
+
+        self.Spinbox = Spinbox(self.subtop, from_=0,to=len(self.df), width = 30)
+        self.Spinbox.grid()
+
+        # Inserts instruction comment
+        self.CommentLabel = Label(self.subtop, text = "Please select the number of chunks you want to split the file on", bg = "grey", pady = 10)
+        self.CommentLabel.grid()
+
+        # Adds dedupe button to sub-screen
+        self.DedupeButton = Button(self.subtop, text = "Chunk File", height = 1, command = self.ProcessChunks)
+        self.DedupeButton.grid()
+
+    # Method to clear out non-ASCII characters and all whitespaces from strings
+    def ProcessChunks(self):
+        
+        try:
+            self.number_of_chunks = int(self.Spinbox.get())
+        except:
+            messagebox.showerror("Error!","You have not entered a number")
+            return False
+
+        if self.number_of_chunks > len(self.df):
+            messagebox.showerror("Error!","You have selected more chunks than there are rows in your dataset")
+            return False
+        elif self.number_of_chunks == 0:
+            messagebox.showerror("Error!","You can't split a file into 0 chunks")
+            return False
+        
+
+        # Creates a variable to number the chunked files by
+        self.file_number = 1
+
+        # Splits the dataframe into chunks using Numpy array_split
+        self.chunklist = array_split(self.df,self.number_of_chunks)
+
+        # Sends each file in chunk list to the relative file format
+        if self.fileformat == "XLSX":
+            for x in self.chunklist:
+                x.to_excel(self.file_name[:-5]+"_{}.xlsx".format(self.file_number))
+                self.file_number += 1
+        elif self.fileformat == "XLS":
+            for x in self.chunklist:
+                x.to_excel(self.file_name[:-4]+"_{}.xlsx".format(self.file_number))
+                self.file_number += 1
+        elif self.fileformat == "CSV":
+            for x in self.chunklist:
+                x.to_csv(self.file_name[:-4]+"_{}.csv".format(self.file_number))
+                self.file_number += 1
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your Files has been Chunked into {} Files!".format(self.number_of_chunks))
+        self.file_number = 0
+
+    def SelectRows(self):
+        # Throws an error if there is no file selected in previous window
+        if self.file_name == "":
+            messagebox.showerror("Error!","You have not selected a File! Please try again")
+            return False
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        elif self.file_name[-3:] == "csv" or self.file_name[-3:] == "txt":
+            self.df = pd.read_csv(self.file_name)
+            self.fileformat = "CSV"
+        elif self.file_name[-4:] == "xlsx" or self.file_name[-4:] == "xlsm" or self.file_name[-4:] == "xlsb":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLSX"
+        elif self.file_name[-3:] == "xls":
+                self.df = pd.read_excel(self.file_name)
+                self.fileformat = "XLS"
+        else:
+            messagebox.showerror("Error!","This tool only supports TXT, CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Creates a sub window to allow us to select column to dedupe file on
+        self.subtop = Toplevel(bg="grey")
+        self.subtop.geometry("335x130")
+        self.subtop.title("Excel Wizard - Chunk Selector")
+
+        self.BlankLabel = Label(self.subtop, text = "", bg = "grey", height = 1)
+        self.BlankLabel.grid()
+
+        self.Spinbox = Spinbox(self.subtop, from_=0, to = 1000000000, width = 30)
+        self.Spinbox.grid()
+
+        # Inserts instruction comment
+        self.CommentLabel = Label(self.subtop, text = "Please select the number of rows you want per chunk", bg = "grey", pady = 10)
+        self.CommentLabel.grid()
+
+        # Adds dedupe button to sub-screen
+        self.DedupeButton = Button(self.subtop, text = "Chunk File", height = 1, command = self.ProcessRows)
+        self.DedupeButton.grid()
+
+    # Method to clear out non-ASCII characters and all whitespaces from strings
+    def ProcessRows(self):
+        
+        try:
+            self.number_of_rows = int(self.Spinbox.get())
+        except:
+            messagebox.showerror("Error!","You have not entered a number")
+            return False
+
+        if self.number_of_rows > len(self.df):
+            messagebox.showerror("Error!","You have selected more rows than there are rows in your dataset")
+            return False
+        elif self.number_of_rows == 0:
+            messagebox.showerror("Error!","You can't split a file into 0 chunks")
+            return False
+
+        # Creates a variable to number the chunked files by
+        self.file_number = 1
+        self.chunksize = len(self.df)//self.number_of_rows
+
+        # Splits the dataframe into chunks using Numpy array_split
+        self.chunklist = array_split(self.df,self.chunksize)
+
+        # Sends each file in chunk list to the relative file format
+        if self.fileformat == "XLSX":
+            for x in self.chunklist:
+                x.to_excel(self.file_name[:-5]+"_{}.xlsx".format(self.file_number))
+                self.file_number += 1
+        elif self.fileformat == "XLS":
+            for x in self.chunklist:
+                x.to_excel(self.file_name[:-4]+"_{}.xlsx".format(self.file_number))
+                self.file_number += 1
+        elif self.fileformat == "CSV":
+            for x in self.chunklist:
+                x.to_csv(self.file_name[:-4]+"_{}.csv".format(self.file_number))
+                self.file_number += 1
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your Files has been Chunked into {} Files!".format(self.chunksize))
+        self.file_number = 0
+  
 def main():
     root = Tk()
     root.title("Excel Wizard v1.0")
