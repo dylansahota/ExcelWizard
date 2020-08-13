@@ -7,7 +7,6 @@ import pandas as pd
 # Requires openpyxl to be installed on machine
 # TO DO
 # Re name all variables
-# Finish functionality
 # Re order label creation and grid commands
 # Create open files and clear files to be one function rather than method
 # Standardise file opening for the multiple file types
@@ -219,7 +218,7 @@ class MainApplication():
         self.SpaceLabel35 = Label(frame, text = "", height = 3, width = 2, bg = "grey")
         self.SpaceLabel35.grid(column = 1, row = 20)
 
-        self.SeparateButton = Button(frame, text = "Seperate", height = 3, width = 10)#, command = self.MergeWindow)
+        self.SeparateButton = Button(frame, text = "Seperate", height = 3, width = 10, command = self.seperate_window)
         self.SeparateButton.grid(column = 2, row = 20)
 
         self.SeparateLabel = Label(frame, text = "Separates multiple sheets into indivdual spreadsheets", height = 3, width = 45, bg = "grey")
@@ -285,6 +284,9 @@ class MainApplication():
 
     def chunk_window(self):
         self.window = ChunkWindow()
+
+    def seperate_window(self):
+        self.window = SeparateWindow()
         
 # Class containing everything related to file cleaner
 class CleanWindow():
@@ -1637,7 +1639,7 @@ class ChunkWindow():
 
     # Method to clear out non-ASCII characters and all whitespaces from strings
     def ProcessRows(self):
-        
+        # Checks if entry is an integer, otherwise throws an error
         try:
             self.number_of_rows = int(self.Spinbox.get())
         except:
@@ -1675,6 +1677,109 @@ class ChunkWindow():
         # Confirmation message after file has been cleaned
         messagebox.showinfo("Success!", "Your Files has been Chunked into {} Files!".format(self.chunksize))
         self.file_number = 0
+
+class SeparateWindow():
+    def __init__(self):
+        self.top = Toplevel(bg="grey")
+        self.top.title("Excel Wizard - Sheet Separator")
+        self.text = StringVar()
+        self.text.set("")
+        self.text_string = ""
+        self.file_name = ""
+
+        # Row 1 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 1, columnspan = 5)
+
+        # Row 2 -  File Label Row
+        self.SpaceLabel2 = Label(self.top, text = "", height = 1, width = 2, bg = "grey")
+        self.SpaceLabel2.grid(column = 0, row = 2)
+
+        self.FileExtLabel = Label(self.top, height = 2, width = 60, bg = "white", relief = "sunken", textvariable = self.text, anchor = "w")
+        self.FileExtLabel.grid(column = 1, row = 2, columnspan = 3)
+
+        self.SpaceLabel3 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel3.grid(column = 4, row = 2)
+
+        # Row 3 -  Blank Row
+        self.SpaceLabel4 = Label(self.top, text = "", height = 2, width = 64, bg = "grey")
+        self.SpaceLabel4.grid(column = 0, row = 3, columnspan = 5)
+
+        self.SpaceLabel5 = Label(self.top, text = "This will seperate multiple worksheets into seperate files", height = 2, width = 60, bg = "grey")
+        self.SpaceLabel5.grid(column = 1, row = 3, columnspan = 3)
+
+        self.SpaceLabel6 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel6.grid(column = 4, row = 2)
+
+        # Row 4 -  Button Row
+        self.SpaceLabel7 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel7.grid(column = 0, row = 4)
+
+        self.SelectButton = Button(self.top, text = "Select File", height = 1, command = self.OpenFile)
+        self.SelectButton.grid(column = 1, row = 4)
+
+        self.ProcessButton = Button(self.top, text = "Separate File", height = 1, command = self.ProcessFile)
+        self.ProcessButton.grid(column = 2, row = 4)
+
+        self.SplitButton = Button(self.top, text = "Clear Files", height = 1, command = self.ClearFile)
+        self.SplitButton.grid(column = 3, row = 4)
+
+        self.SpaceLabel1 = Label(self.top, text = "", height = 2, width = 2, bg = "grey")
+        self.SpaceLabel1.grid(column = 4, row = 4)
+
+        # Row 5 -  Blank Row
+        self.SpaceLabel1 = Label(self.top, text = "", height = 1, width = 64, bg = "grey")
+        self.SpaceLabel1.grid(column = 0, row = 5, columnspan = 5)
+
+    # Method to select file and add it as a variable to be called when processing
+    def OpenFile(self):
+        self.text.set("")
+        self.file_name = filedialog.askopenfilename(initialdir="/documents/Excel Wizard Testing",title="Choose your file to be Deduplicated")
+        self.text.set(self.file_name)
+        return self.file_name
+
+    # Method to clear a previouly selected file
+    def ClearFile(self):
+        self.text.set("")
+        self.file_name = ""
+        self.text_placeholder = ""
+        self.text_string = ""
+        self.filedirectory = ""
+
+    def ProcessFile(self):
+        # Throws an error if there is no file selected in previous window
+        if self.file_name == "":
+            messagebox.showerror("Error!","You have not selected a File! Please try again")
+            return False
+        # Decides how to handle file depending on if it is a CSV or a XLSX otherwise throws an error message
+        elif self.file_name[-3:] == "csv" or self.file_name[-3:] == "txt":
+            messagebox.showerror("Error!","This required multiple worksheets")
+            return False
+        elif self.file_name[-4:] == "xlsx" or self.file_name[-4:] == "xlsm" or self.file_name[-4:] == "xlsb":
+            if len(pd.ExcelFile(self.file_name).sheet_names) < 2:
+                messagebox.showerror("Error!","This tool only supports Multiple Sheet Spreadsheets! Please Try Again")
+                return False
+            else:
+                self.filereader = pd.ExcelFile(self.file_name)
+                # Reads all of the sheets in the path name as separate dataframes and writes them to excel
+                for sheet in self.filereader.sheet_names:
+                    self.df = pd.read_excel(self.file_name, sheet_name=sheet)
+                    self.df.to_excel(self.file_name[:-5]+"_{}.xlsx".format(sheet),index = False)
+        elif self.file_name[-3:] == "xls":
+            if len(pd.ExcelFile(self.file_name).sheet_names) < 2:
+                messagebox.showerror("Error!","This tool only supports Multiple Sheet Spreadsheets! Please Try Again")
+                return False
+            else:
+                self.filereader = pd.ExcelFile(self.file_name)
+                for sheet in self.filereader.sheet_names:
+                    self.df = pd.read_excel(self.file_name, sheet_name=sheet)
+                    self.df.to_excel(self.file_name[:-4]+"_{}.xlsx".format(sheet),index = False)
+        else:
+            messagebox.showerror("Error!","This tool only supports TXT, CSV or XLSX files only! Please Try Again")
+            return False
+
+        # Confirmation message after file has been cleaned
+        messagebox.showinfo("Success!", "Your Sheets have been Separated!")
   
 def main():
     root = Tk()
